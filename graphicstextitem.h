@@ -1,6 +1,7 @@
-﻿#ifndef CTEXTITEM_H
-#define CTEXTITEM_H
+#ifndef GRAPHICSTEXTITEM_H
+#define GRAPHICSTEXTITEM_H
 
+#include <QObject>
 #include <QGraphicsItem>
 #include <QDebug>
 #include <QInputEvent>
@@ -12,11 +13,11 @@
 #include <QPlainTextDocumentLayout>
 #include <QTimer>
 
-class CTextItem : public QObject, public QGraphicsItem
+class GraphicsTextItem : public QObject, public QGraphicsItem
 {
     Q_OBJECT
 public:
-    CTextItem(const QString &text = "please enter text!", QGraphicsItem *parent = nullptr);
+    GraphicsTextItem(const QString &text = "please enter text[GraphicsTextItem]!", QGraphicsItem *parent = nullptr);
 
     // QGraphicsItem interface
 public:
@@ -36,10 +37,10 @@ private slots:
     void cursorFlag();
 
 private:
+    QRectF         m_boundingRect;
     QString        m_text;
     QTextDocument* m_textDocument;
     QTextCursor*   m_textCursor;
-    QRectF         m_boundingRect;
     QFont          m_font;
     QTimer         m_timer; //光标闪烁计时
     QPointF        m_textCursorPos1; //光标线段p1点
@@ -48,4 +49,4 @@ private:
     bool           m_isEditing;   //是否编辑状态
 };
 
-#endif // CTEXTITEM_H
+#endif // GRAPHICSTEXTITEM_H

@@ -14,10 +14,12 @@ CONFIG += c++11
 
 SOURCES += main.cpp\
             Widget.cpp \
-            CTextItem.cpp
+            CTextItem.cpp \
+            graphicstextitem.cpp
 
 HEADERS  += Widget.h \
-            CTextItem.h
+            CTextItem.h \
+            graphicstextitem.h
 
 
 FORMS    += Widget.ui

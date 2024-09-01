@@ -1,11 +1,10 @@
-﻿#include "CTextItem.h"
-
+#include "graphicstextitem.h"
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 #include <QTextBlock>
 
 static void qt_graphicsItem_highlightSelected(
-        QGraphicsItem *item, QPainter *painter, const QStyleOptionGraphicsItem *option)
+    QGraphicsItem *item, QPainter *painter, const QStyleOptionGraphicsItem *option)
 {
     const QRectF murect = painter->transform().mapRect(QRectF(0, 0, 1, 1));
     if (qFuzzyIsNull(qMax(murect.width(), murect.height())))
@@ -17,26 +16,26 @@ static void qt_graphicsItem_highlightSelected(
 
     qreal itemPenWidth;
     switch (item->type()) {
-        case QGraphicsEllipseItem::Type:
-            itemPenWidth = static_cast<QGraphicsEllipseItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsPathItem::Type:
-            itemPenWidth = static_cast<QGraphicsPathItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsPolygonItem::Type:
-            itemPenWidth = static_cast<QGraphicsPolygonItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsRectItem::Type:
-            itemPenWidth = static_cast<QGraphicsRectItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsSimpleTextItem::Type:
-            itemPenWidth = static_cast<QGraphicsSimpleTextItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsLineItem::Type:
-            itemPenWidth = static_cast<QGraphicsLineItem *>(item)->pen().widthF();
-            break;
-        default:
-            itemPenWidth = 1.0;
+    case QGraphicsEllipseItem::Type:
+        itemPenWidth = static_cast<QGraphicsEllipseItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsPathItem::Type:
+        itemPenWidth = static_cast<QGraphicsPathItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsPolygonItem::Type:
+        itemPenWidth = static_cast<QGraphicsPolygonItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsRectItem::Type:
+        itemPenWidth = static_cast<QGraphicsRectItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsSimpleTextItem::Type:
+        itemPenWidth = static_cast<QGraphicsSimpleTextItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsLineItem::Type:
+        itemPenWidth = static_cast<QGraphicsLineItem *>(item)->pen().widthF();
+        break;
+    default:
+        itemPenWidth = 1.0;
     }
     const qreal pad = itemPenWidth / 2;
 
@@ -58,40 +57,38 @@ static void qt_graphicsItem_highlightSelected(
 }
 
 
-CTextItem::CTextItem(const QString &text, QGraphicsItem *parent)
-    : QGraphicsItem(parent)
-    , m_text(text)
-    , m_textDocument(nullptr)
-    , m_textCursor(nullptr)
-    , m_isEditing(false)
+GraphicsTextItem::GraphicsTextItem(const QString &text, QGraphicsItem *parent)
+    : QGraphicsItem(parent), m_text(text), m_isEditing(false)
 {
     m_isDisplayTextCursor = false;
+    m_isEditing = false;
 
     m_textDocument = new QTextDocument(this);
     m_textDocument->setDefaultFont(m_font);
-
     m_textCursor = new QTextCursor(m_textDocument);
     m_textCursor->insertText(m_text);
     m_boundingRect.setSize(m_textDocument->size());
 
     m_timer.setInterval(500);
+
     setFlags(ItemIsMovable | ItemIsSelectable | ItemIsFocusable | ItemAcceptsInputMethod);
 
-    connect(m_textDocument, &QTextDocument::contentsChanged, this, &CTextItem::test);
-    connect(m_textDocument, &QTextDocument::contentsChanged, this, &CTextItem::calcCursorPos);
-    connect(&m_timer, &QTimer::timeout, this, &CTextItem::cursorFlag);
+    connect(m_textDocument, SIGNAL(contentsChanged()), this, SLOT(test()));
+    connect(m_textDocument, SIGNAL(contentsChanged()), this, SLOT(calcCursorPos()));
+    connect(&m_timer, SIGNAL(timeout()), this, SLOT(cursorFlag()));
 }
 
-QRectF CTextItem::boundingRect() const
+QRectF GraphicsTextItem::boundingRect() const
 {
     return m_boundingRect;
 }
 
-void CTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void GraphicsTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(widget)
     painter->save();
-    QPen p(Qt::red);
+    QPen p;
+    p.setColor(Qt::red);
     painter->setPen(p);
     painter->setFont(m_font);
     m_textDocument->drawContents(painter, m_boundingRect);
@@ -102,10 +99,9 @@ void CTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
     if(option->state & (QStyle::State_Selected  | QStyle::State_HasFocus))
         qt_graphicsItem_highlightSelected(this, painter, option);
-
 }
 
-void CTextItem::focusOutEvent(QFocusEvent *event)
+void GraphicsTextItem::focusOutEvent(QFocusEvent *event)
 {
     Q_UNUSED(event);
     m_isEditing = false;
@@ -114,7 +110,7 @@ void CTextItem::focusOutEvent(QFocusEvent *event)
     setCursor(Qt::ArrowCursor);
 }
 
-void CTextItem::keyPressEvent(QKeyEvent *event)
+void GraphicsTextItem::keyPressEvent(QKeyEvent *event)
 {
     int key = event->key();
     bool modified = false;
@@ -152,6 +148,7 @@ void CTextItem::keyPressEvent(QKeyEvent *event)
         modified = true;
         break;
     }
+
     if(modified){
         m_text = m_textDocument->toPlainText();
         calcCursorPos();
@@ -159,7 +156,7 @@ void CTextItem::keyPressEvent(QKeyEvent *event)
     }
 }
 
-void CTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+void GraphicsTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
     Q_UNUSED(event);
     m_isEditing = true; //进入编辑状态
@@ -173,25 +170,24 @@ void CTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
         setCursor(Qt::ArrowCursor);
 }
 
-void CTextItem::inputMethodEvent(QInputMethodEvent *event)
+void GraphicsTextItem::inputMethodEvent(QInputMethodEvent *event)
 {
     m_textCursor->insertText(event->commitString());
     m_text = m_textDocument->toPlainText();
 }
 
-QVariant CTextItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value)
+QVariant GraphicsTextItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     return QGraphicsItem::itemChange(change, value);
 }
 
-
-void CTextItem::test()
+void GraphicsTextItem::test()
 {
     prepareGeometryChange();
     m_boundingRect.setSize(m_textDocument->size());
 }
 
-void CTextItem::calcCursorPos()
+void GraphicsTextItem::calcCursorPos()
 {
     int pos = m_textCursor->position();
     QString text = m_textDocument->toPlainText();
@@ -220,9 +216,8 @@ void CTextItem::calcCursorPos()
     m_textCursorPos2 = pf2;
 }
 
-void CTextItem::cursorFlag()
+void GraphicsTextItem::cursorFlag()
 {
     m_isDisplayTextCursor = !m_isDisplayTextCursor;
     update();
 }
-
