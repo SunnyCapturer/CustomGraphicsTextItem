@@ -1,5 +1,4 @@
-﻿#include "CTextItem.h"
-
+#include "graphicstextitem.h"
 #include <QGuiApplication>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
@@ -9,7 +8,7 @@
 #include <QClipboard>
 
 static void qt_graphicsItem_highlightSelected(
-        QGraphicsItem *item, QPainter *painter, const QStyleOptionGraphicsItem *option)
+    QGraphicsItem *item, QPainter *painter, const QStyleOptionGraphicsItem *option)
 {
     const QRectF murect = painter->transform().mapRect(QRectF(0, 0, 1, 1));
     if (qFuzzyIsNull(qMax(murect.width(), murect.height())))
@@ -21,26 +20,26 @@ static void qt_graphicsItem_highlightSelected(
 
     qreal itemPenWidth;
     switch (item->type()) {
-        case QGraphicsEllipseItem::Type:
-            itemPenWidth = static_cast<QGraphicsEllipseItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsPathItem::Type:
-            itemPenWidth = static_cast<QGraphicsPathItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsPolygonItem::Type:
-            itemPenWidth = static_cast<QGraphicsPolygonItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsRectItem::Type:
-            itemPenWidth = static_cast<QGraphicsRectItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsSimpleTextItem::Type:
-            itemPenWidth = static_cast<QGraphicsSimpleTextItem *>(item)->pen().widthF();
-            break;
-        case QGraphicsLineItem::Type:
-            itemPenWidth = static_cast<QGraphicsLineItem *>(item)->pen().widthF();
-            break;
-        default:
-            itemPenWidth = 1.0;
+    case QGraphicsEllipseItem::Type:
+        itemPenWidth = static_cast<QGraphicsEllipseItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsPathItem::Type:
+        itemPenWidth = static_cast<QGraphicsPathItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsPolygonItem::Type:
+        itemPenWidth = static_cast<QGraphicsPolygonItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsRectItem::Type:
+        itemPenWidth = static_cast<QGraphicsRectItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsSimpleTextItem::Type:
+        itemPenWidth = static_cast<QGraphicsSimpleTextItem *>(item)->pen().widthF();
+        break;
+    case QGraphicsLineItem::Type:
+        itemPenWidth = static_cast<QGraphicsLineItem *>(item)->pen().widthF();
+        break;
+    default:
+        itemPenWidth = 1.0;
     }
     const qreal pad = itemPenWidth / 2;
 
@@ -62,7 +61,7 @@ static void qt_graphicsItem_highlightSelected(
 }
 
 
-CTextItem::CTextItem(const QString &text, QGraphicsItem *parent)
+GraphicsTextItem::GraphicsTextItem(const QString &text, QGraphicsItem *parent)
     : QGraphicsItem(parent)
     , m_text(text)
     , m_textDocument(nullptr)
@@ -83,17 +82,17 @@ CTextItem::CTextItem(const QString &text, QGraphicsItem *parent)
     m_timer.setInterval(500);
     setFlags(ItemIsMovable | ItemIsSelectable | ItemIsFocusable | ItemAcceptsInputMethod);
 
-    connect(m_textDocument, &QTextDocument::contentsChanged, this, &CTextItem::test);
-    connect(m_textDocument, &QTextDocument::contentsChanged, this, &CTextItem::calcCursorPos);
-    connect(&m_timer, &QTimer::timeout, this, &CTextItem::cursorFlag);
+    connect(m_textDocument, &QTextDocument::contentsChanged, this, &GraphicsTextItem::test);
+    connect(m_textDocument, &QTextDocument::contentsChanged, this, &GraphicsTextItem::calcCursorPos);
+    connect(&m_timer, &QTimer::timeout, this, &GraphicsTextItem::cursorFlag);
 }
 
-QRectF CTextItem::boundingRect() const
+QRectF GraphicsTextItem::boundingRect() const
 {
     return m_boundingRect;
 }
 
-void CTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void GraphicsTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(widget)
     painter->save();
@@ -111,7 +110,7 @@ void CTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
 }
 
-void CTextItem::focusOutEvent(QFocusEvent *event)
+void GraphicsTextItem::focusOutEvent(QFocusEvent *event)
 {
     Q_UNUSED(event);
     m_isEditing = false;
@@ -120,7 +119,7 @@ void CTextItem::focusOutEvent(QFocusEvent *event)
     setCursor(Qt::ArrowCursor);
 }
 
-void CTextItem::keyPressEvent(QKeyEvent *event)
+void GraphicsTextItem::keyPressEvent(QKeyEvent *event)
 {
     int key = event->key();
     bool modified = false;
@@ -195,7 +194,7 @@ void CTextItem::keyPressEvent(QKeyEvent *event)
 }
 
 // fix: 鼠标点击时，在多行文字情况下，显示的光标位置是符合预期的
-void CTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+void GraphicsTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
     m_isEditing = true; // 进入编辑状态
     m_isDisplayTextCursor = true;
@@ -250,7 +249,7 @@ void CTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 }
 
 
-void CTextItem::inputMethodEvent(QInputMethodEvent *event)
+void GraphicsTextItem::inputMethodEvent(QInputMethodEvent *event)
 {
     if (event->commitString().isEmpty()) return;
 
@@ -261,7 +260,7 @@ void CTextItem::inputMethodEvent(QInputMethodEvent *event)
     update();
 }
 
-QVariant CTextItem::inputMethodQuery(Qt::InputMethodQuery query) const
+QVariant GraphicsTextItem::inputMethodQuery(Qt::InputMethodQuery query) const
 {
     switch (query) {
     case Qt::ImCursorRectangle: {
@@ -282,13 +281,13 @@ QVariant CTextItem::inputMethodQuery(Qt::InputMethodQuery query) const
 }
 
 
-QVariant CTextItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value)
+QVariant GraphicsTextItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value)
 {
     return QGraphicsItem::itemChange(change, value);
 }
 
 
-void CTextItem::test()
+void GraphicsTextItem::test()
 {
     qDebug() << "m_font:" << m_font;
     m_textDocument->setDefaultFont(m_font);
@@ -298,7 +297,7 @@ void CTextItem::test()
     calcCursorPos();
 }
 
-void CTextItem::calcCursorPos()
+void GraphicsTextItem::calcCursorPos()
 {
     int pos = m_textCursor->position();
     QString text = m_textDocument->toPlainText();
@@ -324,7 +323,7 @@ void CTextItem::calcCursorPos()
     m_textCursorPos2 = QPointF(pixelPosX, pixelPosY);
 }
 
-void CTextItem::cursorFlag()
+void GraphicsTextItem::cursorFlag()
 {
     m_isDisplayTextCursor = !m_isDisplayTextCursor;
     update();

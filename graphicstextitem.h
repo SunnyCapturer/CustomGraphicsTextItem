@@ -1,5 +1,5 @@
-﻿#ifndef CTEXTITEM_H
-#define CTEXTITEM_H
+#ifndef GRAPHICSTEXTITEM_H
+#define GRAPHICSTEXTITEM_H
 
 #include <QGraphicsItem>
 #include <QDebug>
@@ -12,11 +12,11 @@
 #include <QPlainTextDocumentLayout>
 #include <QTimer>
 
-class CTextItem : public QObject, public QGraphicsItem
+class GraphicsTextItem : public QObject, public QGraphicsItem
 {
     Q_OBJECT
 public:
-    CTextItem(const QString &text = "please enter text!", QGraphicsItem *parent = nullptr);
+    GraphicsTextItem(const QString &text = "please enter text!", QGraphicsItem *parent = nullptr);
 
     // QGraphicsItem interface
 public:
@@ -49,4 +49,4 @@ private:
     bool           m_isEditing;   //是否编辑状态
 };
 
-#endif // CTEXTITEM_H
+#endif // GRAPHICSTEXTITEM_H

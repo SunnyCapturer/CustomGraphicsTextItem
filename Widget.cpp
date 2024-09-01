@@ -1,7 +1,7 @@
 ﻿#include "Widget.h"
 #include "ui_Widget.h"
 
-#include "CTextItem.h"
+#include "graphicstextitem.h"
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
@@ -16,7 +16,7 @@ Widget::Widget(QWidget *parent) :
 
     scene->setSceneRect(0,0,400,400);
 
-    CTextItem *text = new CTextItem;
+    GraphicsTextItem *text = new GraphicsTextItem;
     text->setPos(100,100);
     scene->addItem(text);
 
