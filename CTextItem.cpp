@@ -1,8 +1,11 @@
 ﻿#include "CTextItem.h"
 
+#include <QGuiApplication>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 #include <QTextBlock>
+#include <QInputMethod>
+#include <Qt>
 
 static void qt_graphicsItem_highlightSelected(
         QGraphicsItem *item, QPainter *painter, const QStyleOptionGraphicsItem *option)
@@ -152,6 +155,7 @@ void CTextItem::keyPressEvent(QKeyEvent *event)
         modified = true;
         break;
     }
+
     if(modified){
         m_text = m_textDocument->toPlainText();
         calcCursorPos();
@@ -164,20 +168,45 @@ void CTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
     Q_UNUSED(event);
     m_isEditing = true; //进入编辑状态
     m_isDisplayTextCursor = true;
-    cursorFlag(); //显示光标
-    calcCursorPos(); //计算光标位置
-    m_timer.start(); //光标闪烁计时
+    cursorFlag();       //显示光标
+    calcCursorPos();    //计算光标位置
+    m_timer.start();    //光标闪烁计时
     if(m_isEditing)
         setCursor(Qt::IBeamCursor);
     else
         setCursor(Qt::ArrowCursor);
 }
 
+#include <QInputMethod>
+
 void CTextItem::inputMethodEvent(QInputMethodEvent *event)
 {
+    if (event->commitString().isEmpty())
+        return;
+
+    // 插入输入法事件的文本
     m_textCursor->insertText(event->commitString());
+
+    // 更新文本内容
     m_text = m_textDocument->toPlainText();
+
+    // 更新光标位置
+    calcCursorPos();
+
+    // 更新文本显示
+    update();
+
+    // 计算光标的矩形区域
+    // QRectF cursorRect = m_textCursor->boundingRect();
+
+    // 将光标矩形区域从局部坐标系转换为全局坐标系
+    QPointF globalPos = mapToScene(m_textCursorPos2);
+    qDebug() << "globalPos:" << globalPos;
+
+    // 更新输入法候选窗口的位置
+    QGuiApplication::inputMethod()->setInputItemRectangle(QRectF(globalPos, QSizeF(1000, 1000)));
 }
+
 
 QVariant CTextItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value)
 {
@@ -210,14 +239,11 @@ void CTextItem::calcCursorPos()
     }
     int pixelPosY = m_textDocument->documentMargin() + /*metrics.leading() +*/ flag * (metrics.leading() + metrics.height());
     //p1
-    QPoint p1(pixelPosX, pixelPosY);
-    QPointF pf1(p1);
-    m_textCursorPos1 = pf1;
+    QPointF p1(pixelPosX, pixelPosY);
+    m_textCursorPos1 = p1;
     //p2
     pixelPosY = p1.y() + metrics.ascent() + metrics.descent();
-    QPoint p2(pixelPosX, pixelPosY);
-    QPointF pf2(p2);
-    m_textCursorPos2 = pf2;
+    m_textCursorPos2 = QPointF(pixelPosX, pixelPosY);
 }
 
 void CTextItem::cursorFlag()
