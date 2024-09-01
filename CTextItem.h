@@ -28,6 +28,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     void inputMethodEvent(QInputMethodEvent *event) override;                           // 重写 输入法事件（中文）
+    QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;               // 修复 中文输入框的位置不正确
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;     // 字符事件(英文）
 
 private slots:
@@ -46,8 +47,6 @@ private:
     QPointF        m_textCursorPos2; //光标线段p2点
     bool           m_isDisplayTextCursor; //是否显示文本光标
     bool           m_isEditing;   //是否编辑状态
-
-
 };
 
 #endif // CTEXTITEM_H

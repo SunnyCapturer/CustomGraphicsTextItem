@@ -6,6 +6,7 @@
 #include <QTextBlock>
 #include <QInputMethod>
 #include <Qt>
+#include <QClipboard>
 
 static void qt_graphicsItem_highlightSelected(
         QGraphicsItem *item, QPainter *painter, const QStyleOptionGraphicsItem *option)
@@ -124,55 +125,73 @@ void CTextItem::keyPressEvent(QKeyEvent *event)
     int key = event->key();
     bool modified = false;
     int add = 1;
-    switch (key) {
-    case Qt::Key_PageUp: {
-        m_font.setPointSize(m_font.pointSize() + add);
-        test();
+
+    if (event->modifiers() & Qt::ControlModifier) {
+        if (key == Qt::Key_A) {
+            // Ctrl + A: 全选文本
+            m_textCursor->select(QTextCursor::Document);
+            QTextCharFormat fmt;
+            fmt.setBackground(QBrush(QColor(0, 129, 255, 0.5 * 255))); // 设置选中状态的背景色
+            m_textCursor->setCharFormat(fmt);
+            modified = true;
+        } else if (key == Qt::Key_C) {
+            // Ctrl + C: 复制选中的文本到剪切板
+            QClipboard *clipboard = QGuiApplication::clipboard();
+            clipboard->setText(m_textDocument->toPlainText());
+        }
+    } else {
+
+        switch (key) {
+        case Qt::Key_PageUp: {
+            m_font.setPointSize(m_font.pointSize() + add);
+            test();
         }
         break;
-    case Qt::Key_PageDown: {
+        case Qt::Key_PageDown: {
             m_font.setPointSize(m_font.pointSize() - add);
             test();
         }
         break;
-    case Qt::Key_Left:
-        if (m_textCursor->movePosition(QTextCursor::Left)) {
+        case Qt::Key_Left:
+            if (m_textCursor->movePosition(QTextCursor::Left)) {
+                modified = true;
+            }
+            break;
+        case Qt::Key_Right:
+            if (m_textCursor->movePosition(QTextCursor::Right)) {
+                modified = true;
+            }
+            break;
+        case Qt::Key_Up:
+            if (m_textCursor->movePosition(QTextCursor::Up)) {
+                modified = true;
+            }
+            break;
+        case Qt::Key_Down:
+            if (m_textCursor->movePosition(QTextCursor::Down)) {
+                modified = true;
+            }
+            break;
+        case Qt::Key_Enter:
             modified = true;
-        }
-        break;
-    case Qt::Key_Right:
-        if (m_textCursor->movePosition(QTextCursor::Right)) {
+            break;
+        case Qt::Key_Backspace:
+            m_textCursor->deletePreviousChar();
             modified = true;
-        }
-        break;
-    case Qt::Key_Up:
-        if (m_textCursor->movePosition(QTextCursor::Up)) {
+            break;
+        default:
+            m_textCursor->insertText(event->text());
             modified = true;
+            break;
         }
-        break;
-    case Qt::Key_Down:
-        if (m_textCursor->movePosition(QTextCursor::Down)) {
-            modified = true;
+
+        if(modified){
+            m_text = m_textDocument->toPlainText();
+            calcCursorPos();
+            update();
         }
-        break;
-    case Qt::Key_Enter:
-        modified = true;
-        break;
-    case Qt::Key_Backspace:
-        m_textCursor->deletePreviousChar();
-        modified = true;
-        break;
-    default:
-        m_textCursor->insertText(event->text());
-        modified = true;
-        break;
     }
 
-    if(modified){
-        m_text = m_textDocument->toPlainText();
-        calcCursorPos();
-        update();
-    }
 }
 
 // fix: 鼠标点击时，在多行文字情况下，显示的光标位置是符合预期的
@@ -233,21 +252,33 @@ void CTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 
 void CTextItem::inputMethodEvent(QInputMethodEvent *event)
 {
-    if (event->commitString().isEmpty())
-        return;
-
+    if (event->commitString().isEmpty()) return;
 
     // 插入输入法事件的文本
     m_textCursor->insertText(event->commitString());
-
-    // 更新文本内容
     m_text = m_textDocument->toPlainText();
-
-    // 更新光标位置
     calcCursorPos();
-
-    // 更新文本显示
     update();
+}
+
+QVariant CTextItem::inputMethodQuery(Qt::InputMethodQuery query) const
+{
+    switch (query) {
+    case Qt::ImCursorRectangle: {
+        QRectF cursorRect(m_textCursorPos1, QSizeF(1, m_textCursorPos2.y() - m_textCursorPos1.y()));
+        return cursorRect;
+    }
+    case Qt::ImFont:
+        return m_font;
+    case Qt::ImCursorPosition:
+        return m_textCursor->position();
+    case Qt::ImSurroundingText:
+        return m_text;
+    case Qt::ImCurrentSelection:
+        return m_textCursor->selectedText();
+    default:
+        return QVariant();
+    }
 }
 
 
