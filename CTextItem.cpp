@@ -68,6 +68,8 @@ CTextItem::CTextItem(const QString &text, QGraphicsItem *parent)
     , m_textCursor(nullptr)
     , m_isEditing(false)
 {
+    // setFocusProxy(Qt::StrongFocus);
+    // setAttribute(Qt::WA_InputMethodEnabled, true);
     m_isDisplayTextCursor = false;
 
     m_textDocument = new QTextDocument(this);
@@ -94,9 +96,9 @@ void CTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 {
     Q_UNUSED(widget)
     painter->save();
-    QPen p(Qt::red);
-    painter->setPen(p);
-    painter->setFont(m_font);
+    // QPen p(Qt::red);
+    // painter->setPen(p);
+    // painter->setFont(m_font);
     m_textDocument->drawContents(painter, m_boundingRect);
     painter->restore();
 
@@ -121,8 +123,18 @@ void CTextItem::keyPressEvent(QKeyEvent *event)
 {
     int key = event->key();
     bool modified = false;
-
+    int add = 1;
     switch (key) {
+    case Qt::Key_PageUp: {
+        m_font.setPointSize(m_font.pointSize() + add);
+        test();
+        }
+        break;
+    case Qt::Key_PageDown: {
+            m_font.setPointSize(m_font.pointSize() - add);
+            test();
+        }
+        break;
     case Qt::Key_Left:
         if (m_textCursor->movePosition(QTextCursor::Left)) {
             modified = true;
@@ -163,26 +175,67 @@ void CTextItem::keyPressEvent(QKeyEvent *event)
     }
 }
 
+// fix: 鼠标点击时，在多行文字情况下，显示的光标位置是符合预期的
 void CTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
-    Q_UNUSED(event);
-    m_isEditing = true; //进入编辑状态
+    m_isEditing = true; // 进入编辑状态
     m_isDisplayTextCursor = true;
-    cursorFlag();       //显示光标
-    calcCursorPos();    //计算光标位置
-    m_timer.start();    //光标闪烁计时
-    if(m_isEditing)
-        setCursor(Qt::IBeamCursor);
-    else
-        setCursor(Qt::ArrowCursor);
+
+    // 将点击位置映射到文档中的相对位置
+    QPointF clickPos = event->pos();
+
+    // 遍历文档中的每一个文本块（段落）
+    QTextBlock block = m_textDocument->firstBlock();
+    QTextCursor closestCursor = *m_textCursor; // 用来存储最近的光标位置
+    double minDistance = std::numeric_limits<double>::max();
+
+    while (block.isValid()) {
+        QTextLayout *layout = block.layout();
+        if (layout) {
+            // 遍历当前文本块中的每一行
+            for (int i = 0; i < layout->lineCount(); ++i) {
+                QTextLine line = layout->lineAt(i);
+                if (line.isValid()) {
+                    QRectF lineRect = line.naturalTextRect();
+                    lineRect.moveTop(lineRect.top() + block.layout()->position().y()); // 计算行的绝对位置
+
+                    // 判断鼠标点击位置是否在当前行的范围内
+                    if (lineRect.contains(clickPos)) {
+                        int pos = line.xToCursor(clickPos.x(), QTextLine::CursorOnCharacter);
+                        QTextCursor tempCursor = QTextCursor(block);
+                        tempCursor.setPosition(pos + block.position());
+
+                        // 计算当前位置和点击位置的横向距离
+                        qreal cursorXPos = line.cursorToX(pos);
+                        double distance = std::abs(cursorXPos - clickPos.x());
+
+                        // 更新最近的光标位置
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestCursor = tempCursor;
+                        }
+                    }
+                }
+            }
+        }
+        block = block.next(); // 继续遍历下一个文本块
+    }
+
+    // 将光标设置到计算出的最接近位置
+    m_textCursor->setPosition(closestCursor.position());
+    calcCursorPos();    // 计算光标位置
+    cursorFlag();       // 显示光标
+    m_timer.start();    // 光标闪烁计时
+    setCursor(Qt::IBeamCursor);
+    update(); // 更新视图以反映更改
 }
 
-#include <QInputMethod>
 
 void CTextItem::inputMethodEvent(QInputMethodEvent *event)
 {
     if (event->commitString().isEmpty())
         return;
+
 
     // 插入输入法事件的文本
     m_textCursor->insertText(event->commitString());
@@ -195,16 +248,6 @@ void CTextItem::inputMethodEvent(QInputMethodEvent *event)
 
     // 更新文本显示
     update();
-
-    // 计算光标的矩形区域
-    // QRectF cursorRect = m_textCursor->boundingRect();
-
-    // 将光标矩形区域从局部坐标系转换为全局坐标系
-    QPointF globalPos = mapToScene(m_textCursorPos2);
-    qDebug() << "globalPos:" << globalPos;
-
-    // 更新输入法候选窗口的位置
-    QGuiApplication::inputMethod()->setInputItemRectangle(QRectF(globalPos, QSizeF(1000, 1000)));
 }
 
 
@@ -216,8 +259,12 @@ QVariant CTextItem::itemChange(QGraphicsItem::GraphicsItemChange change, const Q
 
 void CTextItem::test()
 {
+    qDebug() << "m_font:" << m_font;
+    m_textDocument->setDefaultFont(m_font);
+
     prepareGeometryChange();
     m_boundingRect.setSize(m_textDocument->size());
+    calcCursorPos();
 }
 
 void CTextItem::calcCursorPos()

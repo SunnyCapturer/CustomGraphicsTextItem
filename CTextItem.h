@@ -46,6 +46,8 @@ private:
     QPointF        m_textCursorPos2; //光标线段p2点
     bool           m_isDisplayTextCursor; //是否显示文本光标
     bool           m_isEditing;   //是否编辑状态
+
+
 };
 
 #endif // CTEXTITEM_H
