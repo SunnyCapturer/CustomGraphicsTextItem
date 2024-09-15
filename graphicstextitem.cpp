@@ -61,8 +61,8 @@ static void qt_graphicsItem_highlightSelected(
 }
 
 
-GraphicsTextItem::GraphicsTextItem(const QString &text, QGraphicsItem *parent)
-    : QGraphicsItem(parent)
+GraphicsTextItem::GraphicsTextItem(const QString &text, QAbstractGraphicsShapeItem *parent)
+    : QAbstractGraphicsShapeItem(parent)
     , m_text(text)
     , m_textDocument(nullptr)
     , m_textCursor(nullptr)

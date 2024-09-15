@@ -12,11 +12,11 @@
 #include <QPlainTextDocumentLayout>
 #include <QTimer>
 
-class GraphicsTextItem : public QObject, public QGraphicsItem
+class GraphicsTextItem : public QObject, public QAbstractGraphicsShapeItem
 {
     Q_OBJECT
 public:
-    GraphicsTextItem(const QString &text = "please enter text!", QGraphicsItem *parent = nullptr);
+    GraphicsTextItem(const QString &text = "please enter text!", QAbstractGraphicsShapeItem *parent = nullptr);
 
     // QGraphicsItem interface
 public:
