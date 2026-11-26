@@ -1,21 +1,40 @@
+# CustomGraphicsTextItem
 
+[![Qt](https://img.shields.io/badge/Qt-5-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
+[![C++](https://img.shields.io/badge/C%2B%2B-11-00599C?logo=cplusplus&logoColor=white)](https://isocpp.org/)
+[![qmake](https://img.shields.io/badge/build-qmake-2D2D2D)](https://doc.qt.io/qt-6/qmake-manual.html)
 
-## 今天的参考
+**English** | [简体中文](README.zh_CN.md)
 
-已修复一个bug：双击时，输入框的光标位置不对（尤其是多行文本时候）
+An editable text item for `QGraphicsScene` — the kind of "type text anywhere on the canvas" box you expect from an annotation tool. Derived from `QAbstractGraphicsShapeItem`, it keeps its own `QTextDocument` and `QTextCursor` and paints a real blinking caret on the scene.
 
-但是还存在bug（终究不是真正的 Edit 控件，网上的修改了下，但是人依旧有问题）：
+## What you get
 
-1. **输入中文时候，系统的输入框位置不在光标附近，在我的win10屏幕的右下角**
-2. ctrl a 全选， ctrl-c 等快捷键作用都没有，反而是会插入未知的符号
+- **Double-click to edit** — double-clicking the item enters edit mode; the click position is mapped to the closest text line and character (via `QTextLayout::lineAt` + `xToCursor()`), so multi-line text places the caret where you actually clicked instead of jumping to the end.
+- **Real caret and selection** — the caret is drawn by the item itself and toggled by a 500 ms `QTimer`, with the caret line computed from the document layout; focus changes start and stop it, and focus-out leaves edit mode cleanly.
+- **Keyboard editing** — printable input is inserted into the document, with arrow-key navigation, `Backspace`, and `Ctrl+A` (select all, with a translucent blue selection background) and `Ctrl+C` (copy the text to the clipboard). `PageUp` / `PageDown` change the font size.
+- **Input method support** — `inputMethodEvent()` commits IME strings, and `inputMethodQuery()` answers `ImCursorRectangle`, `ImFont`, `ImCursorPosition`, `ImSurroundingText` and `ImCurrentSelection`, so Chinese input keeps its candidate window next to the caret instead of in a screen corner.
+- **Self-sizing geometry** — the item's bounding rect follows the document size (`prepareGeometryChange()` on every change), so the text never paints outside its own area.
+- **Standard item behaviour kept** — movable, selectable, focusable and input-method aware, and the usual dashed selection frame of a graphics item is preserved.
 
+## Demo
 
+`Widget.cpp` puts a `QGraphicsScene` (400×400) inside a `QGraphicsView` with a single `GraphicsTextItem` at (100, 100) — double-click it and start typing.
 
-## 最终目的
+## Build
 
-我想实现一个自定义控件，类似 Snipaste 的【文本编辑框控件】
-效果如下：  我希望是继承于 QAbstractGraphicsShapeItem，因为我是使用 view 来控制此控件；
+```bash
+qmake CustomGraphicsTextItem.pro
+make            # nmake / mingw32-make on Windows
+```
 
-若有不确定，可qq联系
+Qt 5 with the `core gui widgets` modules, C++11.
 
-![3dabd5ec7cec3f1a31a91022d16bf67e](README.assets/3dabd5ec7cec3f1a31a91022d16bf67e.png)
+## Known limitations
+
+This is an experiment rather than a drop-in `QTextEdit`: there is no mouse-drag selection, no paste (`Ctrl+V`), and the caret line is measured character by character with `QFontMetrics`, so unusual glyph widths or automatic line wrapping are not perfect.
+
+## Links
+
+- Related: [ShortcutInput](https://github.com/SunnyCapturer/ShortcutInput) — shortcut capture widgets
+- Related: [qt-designer-custom-widgets](https://github.com/SunnyCapturer/qt-designer-custom-widgets) — reuseable Sunny widgets
